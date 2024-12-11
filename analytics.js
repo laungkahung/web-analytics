@@ -6,7 +6,7 @@
         // SDK配置
         config: {
             endpoint: 'http://localhost:8080/collect',
-            siteId: '',
+            appId: '',
             debug: false,
             heartbeatInterval: 10000 // 心跳间隔，用于追踪活跃状态
         },
@@ -46,7 +46,7 @@
                 timestamp: new Date().toISOString(),
                 url: window.location.href,
                 referrer: document.referrer,
-                app_id: this.config.siteId,
+                app_id: this.config.appId,
                 visitor_id: this.generateVisitorId(),
                 user_agent: navigator.userAgent,
                 screen_resolution: `${window.screen.width}x${window.screen.height}`,
