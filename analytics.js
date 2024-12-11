@@ -7,7 +7,8 @@
         config: {
             endpoint: '',
             appId: '',
-            debug: false
+            debug: false,
+            isSPA: true,
         },
 
         // 会话数据
@@ -17,9 +18,30 @@
 
         // 初始化SDK
         init: function(options) {
-            this.config = { ...this.config, ...options };
-            this.session.startTime = new Date();
+            if (!options.appId) {
+                throw new Error('appId is required');
+            }
+            if (typeof options.isSPA !== 'boolean') {
+                throw new Error('isSPA parameter is required and must be a boolean');
+            }
+
+            this.config = {
+                endpoint: options.endpoint || 'http://localhost:8080/collect',
+                appId: options.appId,
+                debug: !!options.debug,
+                isSPA: options.isSPA
+            };
+
+            // 生成访客ID
+            this.visitorId = this.generateVisitorId();
+            
+            // 设置页面追踪
             this.setupPageTracking();
+            
+            if (this.config.debug) {
+                console.log('Analytics initialized with config:', this.config);
+            }
+            this.session.startTime = new Date();
             return this;
         },
 
@@ -105,10 +127,12 @@
 
         // 设置页面追踪
         setupPageTracking: function() {
-            // 监听页面卸载事件（仅用于传统的页面跳转）
-            window.addEventListener('beforeunload', () => {
-                this.trackPageView();
-            });
+            // 只在非 SPA 模式下添加 beforeunload 监听
+            if (!this.config.isSPA) {
+                window.addEventListener('beforeunload', () => {
+                    this.trackPageView();
+                });
+            }
         }
     };
 

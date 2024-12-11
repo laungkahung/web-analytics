@@ -3,6 +3,7 @@ declare module '@lkahung/web-analytics' {
     appId: string;
     endpoint: string;
     debug?: boolean;
+    isSPA: boolean; // 必填参数，用于区分是否为单页应用
   }
 
   interface Analytics {

@@ -55,10 +55,13 @@ Analytics.trackEvent('button', 'click', 'signup-button');
 ## 📝 Configuration
 
 - `appId`: **Required**. Your unique site identifier
-- `endpoint`: Optional. Custom collection endpoint
-- `debug`: Optional. Enable console logging
+- `isSPA`: **Required**. Boolean flag to indicate if the application is a Single Page Application
+- `endpoint`: Optional. Custom collection endpoint (defaults to http://localhost:8080/collect)
+- `debug`: Optional. Enable console logging (defaults to false)
 
 ## 🔄 SPA Integration
+
+For Single Page Applications, make sure to set `isSPA: true` when initializing the SDK:
 
 ### Vue.js / Nuxt.js
 
@@ -67,14 +70,13 @@ Analytics.trackEvent('button', 'click', 'signup-button');
 import Analytics from '@lkahung/web-analytics'
 
 export default defineNuxtPlugin(() => {
-  // 初始化 SDK
   Analytics.init({
     appId: 'your-site-id',
     endpoint: 'your-endpoint',
-    debug: true
+    debug: true,
+    isSPA: true  // 必须设置为 true
   })
 
-  // 在路由变化时自动追踪页面访问
   const router = useRouter()
   router.afterEach((to) => {
     Analytics.trackPageView(to.fullPath)
@@ -85,20 +87,30 @@ export default defineNuxtPlugin(() => {
 ### React Router
 
 ```typescript
+// src/plugins/analytics.ts
+import Analytics from '@lkahung/web-analytics'
+
+// 初始化函数
+export const initAnalytics = () => {
+  Analytics.init({
+    appId: 'your-site-id',
+    endpoint: 'your-endpoint',
+    debug: true,
+    isSPA: true
+  })
+}
+
+// src/App.tsx
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import Analytics from '@lkahung/web-analytics'
+import { initAnalytics } from './plugins/analytics'
 
 function App() {
   const location = useLocation()
 
   useEffect(() => {
     // 初始化 SDK（仅需执行一次）
-    Analytics.init({
-      appId: 'your-site-id',
-      endpoint: 'your-endpoint',
-      debug: true
-    })
+    initAnalytics()
   }, [])
 
   useEffect(() => {
@@ -115,24 +127,32 @@ function App() {
 ### Angular
 
 ```typescript
-// app.component.ts
-import { Component } from '@angular/core'
+// src/app/plugins/analytics.ts
+import Analytics from '@lkahung/web-analytics'
+
+export const initAnalytics = () => {
+  Analytics.init({
+    appId: 'your-site-id',
+    endpoint: 'your-endpoint',
+    debug: true,
+    isSPA: true
+  })
+}
+
+// src/app/app.component.ts
+import { Component, OnInit } from '@angular/core'
 import { Router, NavigationEnd } from '@angular/router'
 import { filter } from 'rxjs/operators'
-import Analytics from '@lkahung/web-analytics'
+import { initAnalytics } from './plugins/analytics'
 
 @Component({
   selector: 'app-root',
   template: '<router-outlet></router-outlet>'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(private router: Router) {
     // 初始化 SDK
-    Analytics.init({
-      appId: 'your-site-id',
-      endpoint: 'your-endpoint',
-      debug: true
-    })
+    initAnalytics()
 
     // 监听路由变化
     this.router.events.pipe(
