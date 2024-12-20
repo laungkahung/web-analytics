@@ -207,9 +207,10 @@ const Analytics = {
   },
 };
 
-// 为了兼容性，同时支持 window.Analytics
+// 为了兼容性，同时支持 window.Analytics 和 window.analytics
 if (typeof window !== 'undefined') {
   window.Analytics = Analytics;
+  window.analytics = Analytics;
 }
 
 export default Analytics;
