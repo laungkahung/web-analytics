@@ -27,6 +27,7 @@ npm install @lkahung/web-analytics
     appId: "your-app-id",
     endpoint: "https://your-analytics-endpoint.com/collect",
     routerMode: "history",
+    routerMode: "history",
     debug: true,
     isSPA: false,
   });
@@ -45,6 +46,7 @@ Analytics.init({
   appId: "your-app-id",
   endpoint: "https://your-analytics-endpoint.com/collect",
   routerMode: "hash",
+  routerMode: "hash",
   debug: true,
   isSPA: true,
 });
@@ -59,8 +61,14 @@ Analytics.trackEvent("button", "click", "signup-button");
 - `isSPA`: **Required**. Boolean flag to indicate if the application is a Single Page Application
 - `endpoint`: **Required**. Custom collection endpoint (defaults to http://localhost:8080/collect)
 - `routerMode`: **Required**. Specifies the routing mode for Single Page Applications. Accepts `"history"` or `"hash"` (defaults to `"history"`)
+- `endpoint`: **Required**. Custom collection endpoint (defaults to http://localhost:8080/collect)
+- `routerMode`: **Required**. Specifies the routing mode for Single Page Applications. Accepts `"history"` or `"hash"` (defaults to `"history"`)
 - `debug`: Optional. Enable console logging (defaults to false)
 - `isSPA`: Optional. Boolean flag to indicate if the application is a Single Page Application
+- `uploadType`: Optional. Specifies the type of data upload mechanism. Accepts `"batch"` or `"single"` (defaults to `"batch"`)
+- `batchSize`: Optional. Number of events to batch before sending (only applicable if `uploadType` is `"batch"`)
+- `uploadInterval`: Optional. Time interval in milliseconds to wait before sending batched events (only applicable if `uploadType` is `"batch"`)
+- `autoTrackRouter`: Optional. Automatically track page views for Single Page Applications (defaults to `true`)
 - `uploadType`: Optional. Specifies the type of data upload mechanism. Accepts `"batch"` or `"single"` (defaults to `"batch"`)
 - `batchSize`: Optional. Number of events to batch before sending (only applicable if `uploadType` is `"batch"`)
 - `uploadInterval`: Optional. Time interval in milliseconds to wait before sending batched events (only applicable if `uploadType` is `"batch"`)
@@ -71,8 +79,10 @@ Analytics.trackEvent("button", "click", "signup-button");
 ```typescript
 // plugins/analytics.client.ts
 import analytics from "@lkahung/web-analytics";
+import analytics from "@lkahung/web-analytics";
 
 export default defineNuxtPlugin(() => {
+  analytics.init({
   analytics.init({
     appId: "your-site-id",
     endpoint: "your-endpoint",
@@ -88,6 +98,7 @@ export default defineNuxtPlugin(() => {
 ```typescript
 // src/plugins/analytics.ts
 import analytics from "@lkahung/web-analytics";
+import analytics from "@lkahung/web-analytics";
 
 // 初始化函数
 export const initAnalytics = () => {
@@ -95,7 +106,14 @@ export const initAnalytics = () => {
     appId: "your-site-id",
     endpoint: "your-endpoint",
     routerMode: "hash",
+  analytics.init({
+    appId: "your-site-id",
+    endpoint: "your-endpoint",
+    routerMode: "hash",
     debug: true,
+    isSPA: true,
+  });
+};
     isSPA: true,
   });
 };
@@ -117,6 +135,10 @@ function App() {
   //   // 监听路由变化
   //   Analytics.trackPageView(location.pathname)
   // }, [location])
+  // useEffect(() => {
+  //   // 监听路由变化
+  //   Analytics.trackPageView(location.pathname)
+  // }, [location])
 
   return (
     // ... your app components
@@ -129,11 +151,15 @@ function App() {
 ```typescript
 // src/app/plugins/analytics.ts
 import analytics from "@lkahung/web-analytics";
+import analytics from "@lkahung/web-analytics";
 
 export const initAnalytics = () => {
   analytics.init({
+  analytics.init({
     appId: "your-site-id",
     endpoint: "your-endpoint",
+    routerMode: "hash",
+    debug: false,
     routerMode: "hash",
     debug: false,
     isSPA: true,
@@ -156,6 +182,11 @@ export class AppComponent implements OnInit {
     initAnalytics();
 
     // 监听路由变化
+    // this.router.events
+    //   .pipe(filter((event) => event instanceof NavigationEnd))
+    //   .subscribe((event: NavigationEnd) => {
+    //     Analytics.trackPageView(event.urlAfterRedirects);
+    //   });
     // this.router.events
     //   .pipe(filter((event) => event instanceof NavigationEnd))
     //   .subscribe((event: NavigationEnd) => {
