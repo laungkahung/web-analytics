@@ -26,12 +26,10 @@ npm install @lkahung/web-analytics
   Analytics.init({
     appId: "your-app-id",
     endpoint: "https://your-analytics-endpoint.com/collect",
+    routerMode: "history",
     debug: true,
     isSPA: false,
   });
-
-  // Track a page view
-  Analytics.trackPageView();
 
   // Track a custom event
   Analytics.trackEvent("category", "action", "label", value);
@@ -46,6 +44,7 @@ import Analytics from "@lkahung/web-analytics";
 Analytics.init({
   appId: "your-app-id",
   endpoint: "https://your-analytics-endpoint.com/collect",
+  routerMode: "hash",
   debug: true,
   isSPA: true,
 });
@@ -58,31 +57,29 @@ Analytics.trackEvent("button", "click", "signup-button");
 
 - `appId`: **Required**. Your unique site identifier
 - `isSPA`: **Required**. Boolean flag to indicate if the application is a Single Page Application
-- `endpoint`: Optional. Custom collection endpoint (defaults to http://localhost:8080/collect)
+- `endpoint`: **Required**. Custom collection endpoint (defaults to http://localhost:8080/collect)
+- `routerMode`: **Required**. Specifies the routing mode for Single Page Applications. Accepts `"history"` or `"hash"` (defaults to `"history"`)
 - `debug`: Optional. Enable console logging (defaults to false)
 - `isSPA`: Optional. Boolean flag to indicate if the application is a Single Page Application
-
-## 🔄 SPA Integration
-
-For Single Page Applications, make sure to set `isSPA: true` when initializing the SDK:
+- `uploadType`: Optional. Specifies the type of data upload mechanism. Accepts `"batch"` or `"single"` (defaults to `"batch"`)
+- `batchSize`: Optional. Number of events to batch before sending (only applicable if `uploadType` is `"batch"`)
+- `uploadInterval`: Optional. Time interval in milliseconds to wait before sending batched events (only applicable if `uploadType` is `"batch"`)
+- `autoTrackRouter`: Optional. Automatically track page views for Single Page Applications (defaults to `true`)
 
 ### Vue.js / Nuxt.js
 
 ```typescript
 // plugins/analytics.client.ts
-import Analytics from "@lkahung/web-analytics";
+import analytics from "@lkahung/web-analytics";
 
 export default defineNuxtPlugin(() => {
-  Analytics.init({
+  analytics.init({
     appId: "your-site-id",
     endpoint: "your-endpoint",
-    debug: true,
-    isSPA: true, // 必须设置为 true
-  });
-
-  const router = useRouter();
-  router.afterEach((to) => {
-    Analytics.trackPageView(to.fullPath);
+    routerMode: "hash",
+    debug: false,
+    isSPA: true,
+    x,
   });
 });
 ```
@@ -91,17 +88,18 @@ export default defineNuxtPlugin(() => {
 
 ```typescript
 // src/plugins/analytics.ts
-import Analytics from '@lkahung/web-analytics'
+import analytics from "@lkahung/web-analytics";
 
 // 初始化函数
 export const initAnalytics = () => {
-  Analytics.init({
-    appId: 'your-site-id',
-    endpoint: 'your-endpoint',
+  analytics.init({
+    appId: "your-site-id",
+    endpoint: "your-endpoint",
+    routerMode: "hash",
     debug: true,
-    isSPA: true
-  })
-}
+    isSPA: true,
+  });
+};
 
 // src/App.tsx
 import { useEffect } from 'react'
@@ -116,10 +114,10 @@ function App() {
     initAnalytics()
   }, [])
 
-  useEffect(() => {
-    // 监听路由变化
-    Analytics.trackPageView(location.pathname)
-  }, [location])
+  // useEffect(() => {
+  //   // 监听路由变化
+  //   Analytics.trackPageView(location.pathname)
+  // }, [location])
 
   return (
     // ... your app components
@@ -131,13 +129,14 @@ function App() {
 
 ```typescript
 // src/app/plugins/analytics.ts
-import Analytics from "@lkahung/web-analytics";
+import analytics from "@lkahung/web-analytics";
 
 export const initAnalytics = () => {
-  Analytics.init({
+  analytics.init({
     appId: "your-site-id",
     endpoint: "your-endpoint",
-    debug: true,
+    routerMode: "hash",
+    debug: false,
     isSPA: true,
   });
 };
@@ -158,11 +157,11 @@ export class AppComponent implements OnInit {
     initAnalytics();
 
     // 监听路由变化
-    this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
-        Analytics.trackPageView(event.urlAfterRedirects);
-      });
+    // this.router.events
+    //   .pipe(filter((event) => event instanceof NavigationEnd))
+    //   .subscribe((event: NavigationEnd) => {
+    //     Analytics.trackPageView(event.urlAfterRedirects);
+    //   });
   }
 }
 ```

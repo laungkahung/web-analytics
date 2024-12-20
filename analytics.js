@@ -1,151 +1,215 @@
 // Web Analytics SDK
-(function(window) {
-    'use strict';
+const Analytics = {
+  // SDK配置
+  config: {
+    endpoint: "",
+    appId: "",
+    debug: false,
+    isSPA: true,
+    routerMode: "history",
+    uploadType: "batch",
+    batchSize: 20,
+    uploadInterval: 5000,
+    autoTrackRouter: true,
+  },
 
-    const Analytics = {
-        // SDK配置
-        config: {
-            endpoint: '',
-            appId: '',
-            debug: false,
-            isSPA: true,
-        },
+  // 会话数据
+  session: {
+    startTime: null,
+    sessionId: null,
+  },
 
-        // 会话数据
-        session: {
-            startTime: null
-        },
+  // 事件队列
+  eventQueue: [],
 
-        // 初始化SDK
-        init: function(options) {
-            if (!options.appId) {
-                throw new Error('appId is required');
-            }
-            if (typeof options.isSPA !== 'boolean') {
-                throw new Error('isSPA parameter is required and must be a boolean');
-            }
+  // 初始化SDK
+  init: function (options) {
+    if (!options.appId) {
+      throw new Error("appId is required");
+    }
+    if (typeof options.isSPA !== "boolean") {
+      throw new Error("isSPA parameter is required and must be a boolean");
+    }
 
-            this.config = {
-                endpoint: options.endpoint || 'http://localhost:8080/collect',
-                appId: options.appId,
-                debug: !!options.debug,
-                isSPA: options.isSPA
-            };
-
-            // 生成访客ID
-            this.visitorId = this.generateVisitorId();
-
-            this.session.startTime = new Date();
-            // 设置页面追踪
-            this.setupPageTracking();
-
-            if (this.config.debug) {
-                console.log('Analytics initialized with config:', this.config);
-            }
-
-            return this;
-        },
-
-        // 生成唯一访客ID
-        generateVisitorId: function() {
-            let visitorId = localStorage.getItem('wa_visitor_id');
-            if (!visitorId) {
-                visitorId = 'v_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-                localStorage.setItem('wa_visitor_id', visitorId);
-            }
-            return visitorId;
-        },
-
-        // 获取基础数据
-        getBaseData: function() {
-            return {
-                timestamp: new Date().toISOString(),
-                page_url: window.location.href,
-                page_title: document.title,
-                page_referrer: document.referrer,
-                app_id: this.config.appId,
-                visitor_id: this.generateVisitorId(),
-                user_agent: navigator.userAgent,
-                screen_width: window.screen.width,
-                screen_height: window.screen.height,
-                viewport_width: window.innerWidth,
-                viewport_height: window.innerHeight,
-                language: navigator.language
-            };
-        },
-
-        // 发送数据到服务器
-        send: function(eventData) {
-            const data = {
-                ...this.getBaseData(),
-                ...eventData
-            };
-
-            if (this.config.debug) {
-                console.log('[Analytics] Sending:', data);
-            }
-
-            fetch(this.config.endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            }).catch(err => {
-                if (this.config.debug) {
-                    console.error('[Analytics] Error:', err);
-                }
-            });
-        },
-
-        // 追踪页面访问
-        trackPageView: function() {
-            const sessionDuration = Math.floor((new Date() - this.session.startTime) / 1000);
-
-            // 使用 sendBeacon 确保数据在页面卸载时能够发送
-            const data = {
-                ...this.getBaseData(),
-                event_type: 'pageview',
-                session_duration: sessionDuration
-            };
-
-            if (this.config.debug) {
-                console.log('[Analytics] Sending pageview:', data);
-            }
-
-            // 使用 sendBeacon 来确保数据发送
-            navigator.sendBeacon(this.config.endpoint, JSON.stringify(data));
-        },
-
-        // 追踪自定义事件
-        trackEvent: function(category, action, label = null, value = null) {
-            this.send({
-                event_type: 'event',
-                category: category,
-                action: action,
-                label: label,
-                value: value
-            });
-        },
-
-        // 设置页面追踪
-        setupPageTracking: function() {
-            // 只在非 SPA 模式下添加 beforeunload 监听
-            if (!this.config.isSPA) {
-                window.addEventListener('beforeunload', () => {
-                    this.trackPageView();
-                });
-            }
-        }
+    this.config = {
+      endpoint: options.endpoint || "http://localhost:8080/collect",
+      appId: options.appId,
+      debug: !!options.debug,
+      isSPA: options.isSPA,
+      routerMode: options.routerMode || "history",
+      uploadType: options.uploadType || "batch",
+      batchSize: options.batchSize || 20,
+      uploadInterval: options.uploadInterval || 5000,
+      autoTrackRouter: options.autoTrackRouter !== false,
     };
 
-    // 如果是 Node.js 环境，使用 module.exports
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = Analytics;
+    // 生成访客ID
+    this.visitorId = this.generateVisitorId();
+
+    this.session.startTime = new Date();
+    this.session.sessionId = this.generateSessionId();
+
+    // 设置页面追踪
+    this.setupPageTracking();
+
+    if (this.config.debug) {
+      console.log("startTime:", this.session.startTime);
+      console.log("sessionId:", this.session.sessionId);
+      console.log("Analytics initialized with config:", this.config);
     }
 
-    // 如果是浏览器环境，挂载到 window
-    if (typeof window !== 'undefined') {
-        window.Analytics = Analytics;
+    return this;
+  },
+
+  // 生成唯一访客ID
+  generateVisitorId: function () {
+    let visitorId = localStorage.getItem("wa_visitor_id");
+    if (!visitorId) {
+      visitorId =
+        "v_" +
+        Math.random().toString(36).substring(2) +
+        Date.now().toString(36);
+      localStorage.setItem("wa_visitor_id", visitorId);
     }
-})(window);
+    return visitorId;
+  },
+
+  // 生成唯一会话ID
+  generateSessionId: function () {
+    let sessionId = localStorage.getItem("session_id");
+    if (!sessionId) {
+      sessionId = Date.now() + "-" + Math.random().toString(36).slice(2);
+      localStorage.setItem("session_id", sessionId);
+    }
+    return sessionId;
+  },
+
+  // 获取基础数据
+  getBaseData: function () {
+    return {
+      app_id: this.config.appId,
+      screen_width: window.screen.width,
+      screen_height: window.screen.height,
+      viewport_width: document.documentElement.clientWidth,
+      viewport_height: document.documentElement.clientHeight,
+      user_agent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      session_id: this.session.sessionId,
+      visitor_id: this.visitorId,
+    };
+  },
+
+  // 添加事件到队列
+  addToQueue: function (event) {
+    this.eventQueue.push({
+      ...this.getBaseData(),
+      ...event,
+    });
+
+    if (this.config.debug) {
+      console.log("[Analytics] Event added to queue:", event);
+      console.log("[Analytics] Queue:", this.eventQueue);
+    }
+
+    if (
+      this.config.uploadType === "batch" &&
+      this.eventQueue.length >= this.config.batchSize
+    ) {
+      this.flushQueue();
+    }
+  },
+
+  // 上报队列数据
+  flushQueue: async function () {
+    if (!this.eventQueue.length) return;
+
+    const events = [...this.eventQueue];
+    this.eventQueue = [];
+
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(this.config.endpoint, JSON.stringify(events));
+      } else {
+        await fetch(this.config.endpoint, {
+          method: "POST",
+          body: JSON.stringify(events),
+        });
+      }
+    } catch (err) {
+      if (this.config.debug) {
+        console.error("Analytics upload failed:", err);
+      }
+      // 失败重新入队
+      this.eventQueue.unshift(...events);
+    }
+  },
+
+  // 页面离开追踪
+  trackPageLeave: function () {
+    const duration = Math.floor((new Date() - this.session.startTime) / 1000);
+
+    this.addToQueue({
+      event_type: "pageview",
+      session_duration: duration,
+      page_url: window.location.href,
+      page_title: document.title,
+      page_referrer: document.referrer,
+    });
+
+    // 确保数据发送
+    this.flushQueue();
+  },
+
+  // 追踪自定义事件
+  trackEvent: function (category, action, label = null, value = null) {
+    this.addToQueue({
+      event_type: "event",
+      category: category,
+      action: action,
+      label: label,
+      value: value,
+    });
+  },
+
+  // 设置页面追踪
+  setupPageTracking: function () {
+    // 原生 HTML 页面监听
+    window.addEventListener("beforeunload", () => {
+      this.trackPageLeave();
+    });
+
+    // History API 监听
+    if (this.config.autoTrackRouter && this.config.routerMode === "history") {
+      const originalPushState = history.pushState;
+      const originalReplaceState = history.replaceState;
+
+      history.pushState = (...args) => {
+        this.trackPageLeave();
+        originalPushState.apply(history, args);
+      };
+
+      history.replaceState = (...args) => {
+        this.trackPageLeave();
+        originalReplaceState.apply(history, args);
+      };
+
+      window.addEventListener("popstate", () => {
+        this.trackPageLeave();
+      });
+    }
+
+    // Hash 模式监听
+    if (this.config.routerMode === "hash") {
+      window.addEventListener("hashchange", () => {
+        this.trackPageLeave();
+      });
+    }
+  },
+};
+
+// 为了兼容性，同时支持 window.Analytics
+if (typeof window !== 'undefined') {
+  window.Analytics = Analytics;
+}
+
+export default Analytics;
