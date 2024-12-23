@@ -23,7 +23,7 @@ npm install @lkahung/web-analytics
 ```html
 <script src="https://unpkg.com/@lkahung/web-analytics"></script>
 <script>
-  Analytics.init({
+  window.Analytics.init({
     appId: "your-app-id",
     endpoint: "https://your-analytics-endpoint.com/collect",
     routerMode: "history",
@@ -39,9 +39,9 @@ npm install @lkahung/web-analytics
 ### Node.js / Modern JavaScript
 
 ```javascript
-import Analytics from "@lkahung/web-analytics";
+import analytics from "@lkahung/web-analytics";
 
-Analytics.init({
+analytics.init({
   appId: "your-app-id",
   endpoint: "https://your-analytics-endpoint.com/collect",
   routerMode: "hash",
@@ -50,7 +50,7 @@ Analytics.init({
 });
 
 // Track events
-Analytics.trackEvent("button", "click", "signup-button");
+analytics.trackEvent("button", "click", "signup-button");
 ```
 
 ## 📝 Configuration
