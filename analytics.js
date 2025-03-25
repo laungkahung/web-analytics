@@ -1,15 +1,15 @@
 (function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
+  if (typeof define === "function" && define.amd) {
     // AMD
     define([], factory);
-  } else if (typeof module === 'object' && module.exports) {
+  } else if (typeof module === "object" && module.exports) {
     // CommonJS
     module.exports = factory();
   } else {
     // 浏览器全局变量
     root.Analytics = factory();
   }
-}(typeof self !== 'undefined' ? self : this, function () {
+})(typeof self !== "undefined" ? self : this, function () {
   // Web Analytics SDK
   const Analytics = {
     // SDK配置
@@ -185,13 +185,26 @@
         value: value,
       });
     },
+    // 添加防抖计时器
+    lastTrackTime: 0,
+    minTrackInterval: 100, // 最小追踪间隔（毫秒）
 
+    // 添加防抖检查方法
+    shouldTrack: function () {
+      const now = Date.now();
+      if (now - this.lastTrackTime >= this.minTrackInterval) {
+        this.lastTrackTime = now;
+        return true;
+      }
+      return false;
+    },
     // 设置页面追踪
     setupPageTracking: function () {
       // 判断是否为移动设备
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      this.logDebugInfo(`isMobile: ${isMobile} - navigator.userAgent: ${navigator.userAgent}`);
-
+      this.logDebugInfo(
+        `isMobile: ${isMobile} - navigator.userAgent: ${navigator.userAgent}`
+      );
 
       if (isMobile) {
         // 使用 pagehide 事件
@@ -252,7 +265,7 @@
       if (this.config.debug) {
         console.log(`[DEBUG] ${message}`);
       }
-    }
+    },
   };
 
   // 为了兼容性，同时支持 window.Analytics 和 window.analytics
@@ -262,4 +275,4 @@
   }
 
   return Analytics;
-}));
+});
