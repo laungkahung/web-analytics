@@ -29,6 +29,7 @@
     session: {
       startTime: null,
       sessionId: null,
+      pageStartTime: null, // 添加页面开始时间戳
     },
 
     // 事件队列
@@ -58,8 +59,9 @@
       // 生成访客ID
       this.visitorId = this.generateVisitorId();
 
-      this.session.startTime = new Date();
+      this.session.startTime = Date.now();
       this.session.sessionId = this.generateSessionId();
+      this.session.pageStartTime = Date.now(); // 初始化页面开始时间
 
       // 设置页面追踪
       this.setupPageTracking();
@@ -67,6 +69,7 @@
       if (this.config.debug) {
         console.log("startTime:", this.session.startTime);
         console.log("sessionId:", this.session.sessionId);
+        console.log("pageStartTime:", this.session.pageStartTime);
         console.log("Analytics initialized with config:", this.config);
       }
 
@@ -160,8 +163,11 @@
 
     // 页面离开追踪
     trackPageLeave: function () {
-      this.logDebugInfo("trackPageLeave");
-      const duration = Math.floor((new Date() - this.session.startTime) / 1000);
+      const duration = Date.now() - (this.session.pageStartTime || this.session.startTime);// 计算页面停留时间，毫秒
+
+      this.logDebugInfo(
+        `trackPageLeave - duration:${duration} - pageStartTime:${this.session.pageStartTime} - startTime:${this.session.startTime}`
+      );
 
       this.addToQueue({
         event_type: "pageview",
@@ -170,6 +176,9 @@
         page_title: document.title,
         page_referrer: document.referrer,
       });
+
+      // 更新页面开始时间
+      this.session.pageStartTime = Date.now();
 
       // 确保数据发送
       this.flushQueue();
@@ -192,6 +201,14 @@
     // 添加防抖检查方法
     shouldTrack: function () {
       const now = Date.now();
+
+      this.logDebugInfo(
+        "shouldTrack",
+        now,
+        this.lastTrackTime,
+        this.minTrackInterval
+      );
+
       if (now - this.lastTrackTime >= this.minTrackInterval) {
         this.lastTrackTime = now;
         return true;
@@ -210,13 +227,17 @@
         // 使用 pagehide 事件
         window.addEventListener("pagehide", () => {
           this.logDebugInfo("pagehide event triggered");
-          this.trackPageLeave();
+          if (this.shouldTrack()) {
+            this.trackPageLeave();
+          }
         });
       } else {
         // 原生 HTML 页面监听
         window.addEventListener("beforeunload", () => {
           this.logDebugInfo("beforeunload");
-          this.trackPageLeave();
+          if (this.shouldTrack()) {
+            this.trackPageLeave();
+          }
         });
       }
 
@@ -235,19 +256,25 @@
 
         history.pushState = (...args) => {
           this.logDebugInfo("pushState event triggered");
-          this.trackPageLeave();
+          if (this.shouldTrack()) {
+            this.trackPageLeave();
+          }
           originalPushState.apply(history, args);
         };
 
         history.replaceState = (...args) => {
           this.logDebugInfo("replaceState event triggered");
-          this.trackPageLeave();
+          if (this.shouldTrack()) {
+            this.trackPageLeave();
+          }
           originalReplaceState.apply(history, args);
         };
 
         window.addEventListener("popstate", () => {
           this.logDebugInfo("popstate event triggered");
-          this.trackPageLeave();
+          if (this.shouldTrack()) {
+            this.trackPageLeave();
+          }
         });
       }
 
@@ -260,10 +287,10 @@
       }
     },
 
-    logDebugInfo: function (message) {
+    logDebugInfo: function (...messages) {
       // 检查是否开启调试模式
       if (this.config.debug) {
-        console.log(`[DEBUG] ${message}`);
+        console.log("[DEBUG]", ...messages);
       }
     },
   };
